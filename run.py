@@ -122,6 +122,10 @@ if __name__ == "__main__":
     ds = AudioClassificationDataset(cases)
     train_dl = get_dataloader(ds, infinite=True)
 
+    model = tvmodels.resnet18(num_classes=len(cases))
+    optim = torch.optim.Adam(model.parameters())
+    device = next(model.parameters()).device
+    
     total_it = 10000
     infer_it = 100
 
