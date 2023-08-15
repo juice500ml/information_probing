@@ -72,19 +72,22 @@ def _parse(commonphone_path, max_length=10):
 
 def _filter_words(df):
     df["lang_text"] = df.apply(lambda x: f"{x.language}_{x.text}", axis=1)
-    count_words = df[~df.text.isna()].lang_text.value_counts()
+    long_enough_mask = (df["max"] - df["min"]) >= 0.025
+    count_words = df[(df.text != "") & long_enough_mask].lang_text.value_counts()
     target_words = set(count_words[count_words >= 1000].keys())
-    new_df = df[df.lang_text.isin(target_words)].copy().reset_index(drop=True)
+    new_df = df[df.lang_text.isin(target_words) & long_enough_mask].copy().reset_index(drop=True)
+    new_df = new_df.rename(columns={"text": "original_text"}).rename(columns={"lang_text": "text"})
 
-    print(f"Original word count: {df[~df.text.isna()].lang_text.nunique()}, # of samples: {len(df[~df.text.isna()])}")
-    print(f"New word count: {new_df.lang_text.nunique()}, # of samples: {len(new_df)}")
+    print(f"Original word count: {df[df.text != ''].lang_text.nunique()}, # of samples: {len(df[df.text != ''])}")
+    print(f"New word count: {new_df.text.nunique()}, # of samples: {len(new_df)}")
     return new_df
 
 
 def _filter_phonemes(df):
-    count_words = df[df.text != "(...)"].text.value_counts()
+    long_enough_mask = (df["max"] - df["min"]) >= 0.025
+    count_words = df[(df.text != "(...)") & long_enough_mask].text.value_counts()
     target_words = set(count_words[count_words >= 1000].keys())
-    new_df = df[df.text.isin(target_words)].copy().reset_index(drop=True)
+    new_df = df[df.text.isin(target_words) & long_enough_mask].copy().reset_index(drop=True)
 
     print(f"Original phoneme count: {df[df.text != '(...)'].text.nunique()}, # of samples: {len(df[df.text != '(...)'])}")
     print(f"New phoneme count: {new_df.text.nunique()}, # of samples: {len(new_df)}")
