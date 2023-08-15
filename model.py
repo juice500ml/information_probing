@@ -18,7 +18,9 @@ class Wav2Vec2WithProbe(LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        self.model = self._prepare_model(Wav2Vec2Model.from_pretrained(model_name, apply_spec_augment=False))
+        self.model = Wav2Vec2Model.from_pretrained(model_name, apply_spec_augment=False)
+        self._prepare_model()
+
         self.fc = torch.nn.Linear(self.model.config.output_hidden_size, num_classes)
         self.max_feature_length = self.model._get_feat_extract_output_lengths(int(max_length * 16000))
 
@@ -27,21 +29,17 @@ class Wav2Vec2WithProbe(LightningModule):
 
     @staticmethod
     def _grad(module, requires_grad):
-        module.requires_grad = requires_grad
+        module.requires_grad_(requires_grad)
         for p in module.parameters():
-            p.requires_grad = requires_grad
+            p.requires_grad_(requires_grad)
 
-    def _prepare_model(self, model):
-        self._grad(model.feature_extractor, False)
-        self._grad(model.feature_projection, False)
-        self._grad(model.encoder, False)
-
+    def _prepare_model(self):
+        self._grad(self.model, False)
         if self.hparams.tuning_type == "linear":
-            model.encoder.layers = model.encoder.layers[:self.hparams.layer_index]
+            self.model.encoder.layers = self.model.encoder.layers[:self.hparams.layer_index]
         elif self.hparams.tuning_type == "finetune":
-            self._grad(model.encoder.layers[self.hparams.layer_index:], True)
-
-        return model
+            for layer in self.model.encoder.layers[self.hparams.layer_index:]:
+                self._grad(layer, True)
 
     def _logits(self, hidden_states, mask):
         mask = self.model._get_feature_vector_attention_mask(self.max_feature_length, mask)
