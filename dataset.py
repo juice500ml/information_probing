@@ -22,10 +22,8 @@ class CommonPhoneDataset(torch.utils.data.Dataset):
         row = self.df.iloc[idx]
         audio, _ = librosa.load(row.audio, sr=16000, mono=True)
         return {
-            "audio": audio,
+            "audio": audio[int(16000 * row["min"]):int(16000 * row["max"])],
             "label": self.label_to_index[row.text],
-            "min": row["min"],
-            "max": row["max"],
         }
 
 
@@ -34,7 +32,6 @@ class CommonPhoneDataModule(LightningDataModule):
             self,
             dataset_path: Path,
             model_name: str,
-            max_length: float,
             batch_size: int,
             num_workers: int,
             **kwargs
@@ -62,17 +59,9 @@ class CommonPhoneDataModule(LightningDataModule):
         inputs = self.extractor(
             [b["audio"] for b in batch],
             sampling_rate=16000,
-            max_length=int(16000 * self.hparams.max_length),
-            padding="max_length",
+            padding="longest",
             return_tensors="pt",
         )
-
-        # Specific text location
-        for i, b in enumerate(batch):
-            mask = torch.zeros_like(inputs["attention_mask"][i])
-            mask[int(b["min"] * 16000) : int(b["max"] * 16000)] = 1
-            inputs["attention_mask"][i] &= mask
-
         # Final label
         labels = torch.LongTensor([b["label"] for b in batch])
 

@@ -12,7 +12,8 @@ class Wav2Vec2WithProbe(LightningModule):
         tuning_type: str,
         lr: float,
         weight_decay: float,
-        max_length: float,
+        probe_type: str,
+        probe_hidden_dim: int,
         **kwargs
     ):
         super().__init__()
@@ -21,11 +22,30 @@ class Wav2Vec2WithProbe(LightningModule):
         self.model = Wav2Vec2Model.from_pretrained(model_name, apply_spec_augment=False)
         self._prepare_model()
 
-        self.fc = torch.nn.Linear(self.model.config.output_hidden_size, num_classes)
-        self.max_feature_length = self.model._get_feat_extract_output_lengths(int(max_length * 16000))
+        self.fc = self._build_probe()
 
         self._validation_outputs = []
         self._test_outputs = []
+
+    def _build_probe(self):
+        if self.hparams.probe_type == "linear":
+            return torch.nn.Linear(self.model.config.output_hidden_size, self.hparams.num_classes)
+        elif self.hparams.probe_type == "mlp1":
+            return torch.nn.Sequential(
+                torch.nn.Linear(self.model.config.output_hidden_size, self.hparams.probe_hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.hparams.probe_hidden_dim, self.hparams.num_classes),
+            )
+        elif self.hparams.probe_type == "mlp2":
+            return torch.nn.Sequential(
+                torch.nn.Linear(self.model.config.output_hidden_size, self.hparams.probe_hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.hparams.probe_hidden_dim, self.hparams.probe_hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.hparams.probe_hidden_dim, self.hparams.num_classes),
+            )
+        else:
+            raise Exception
 
     @staticmethod
     def _grad(module, requires_grad):
@@ -42,7 +62,7 @@ class Wav2Vec2WithProbe(LightningModule):
                 self._grad(layer, True)
 
     def _logits(self, hidden_states, mask):
-        mask = self.model._get_feature_vector_attention_mask(self.max_feature_length, mask)
+        mask = self.model._get_feature_vector_attention_mask(hidden_states.shape[1], mask)
         mask = mask.unsqueeze(-1)
         avg_states = (hidden_states * mask).sum(1) / torch.sum(mask, dim=1)
         return self.fc(avg_states)
@@ -54,8 +74,7 @@ class Wav2Vec2WithProbe(LightningModule):
 
     def _logits_labels(self, batch):
         inputs, labels = batch
-        logits = self._logits(
-            self.model(**inputs).last_hidden_state, inputs["attention_mask"])
+        logits = self._logits(self.model(**inputs).last_hidden_state, inputs["attention_mask"])
         return logits, labels
 
     def training_step(self, batch, batch_idx):

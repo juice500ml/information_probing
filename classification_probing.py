@@ -19,6 +19,7 @@ def main(args):
         devices=args["devices"],
         fast_dev_run=args["fast_dev_run"],
         max_epochs=args["max_epochs"],
+        val_check_interval=args["val_check_interval"],
         deterministic=True,
         check_val_every_n_epoch=1,
         default_root_dir=f"{getcwd()}/exps/{args['dataset_path']}/layer_index={args['layer_index']}/{datetime.today().isoformat()}"
@@ -32,21 +33,23 @@ if __name__ == "__main__":
     # DataModule
     parser.add_argument("--dataset_path", type=Path, help="Path to dataset csv file")
     parser.add_argument("--model_name", default="facebook/wav2vec2-base", help="Huggingface transformers model name")
-    parser.add_argument("--max_length", type=float, default=10.0, help="Max audio length in seconds")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
-    parser.add_argument("--num_workers", type=int, default=8, help="Number of multiprocessing workers for dataloading")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
+    parser.add_argument("--num_workers", type=int, default=5, help="Number of multiprocessing workers for dataloading")
 
     # Model
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate for AdamW")
+    parser.add_argument("--lr", type=float, default=5e-6, help="Learning rate for AdamW")
     parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay for AdamW")
     parser.add_argument("--tuning_type", choices=["linear", "finetune"], help="Type of training (linear: linear probing, finetune: fine-tuning)")
     parser.add_argument("--layer_index", type=int, help="Transformer layer index to use")
+    parser.add_argument("--probe_type", default="linear", choices=["linear", "mlp1", "mlp2"], help="Structure for the probe (Hewitt & Liang 2019)")
+    parser.add_argument("--probe_hidden_dim", default=0, type=int, help="Hidden dimension for the MLP probes (Hewitt & Liang 2019)")
 
     # Trainer
     parser.add_argument("--accelerator",  default="gpu", help="gpu or cpu")
     parser.add_argument("--devices", default=1, help="# of gpus")
     parser.add_argument("--fast_dev_run", help="True if debug mode", default=False)
     parser.add_argument("--max_epochs", type=int, default=5, help="Maximum epochs to train")
+    parser.add_argument("--val_check_interval", type=float, default=1.0, help="Validation interval (1.0 = Once per epoch, 0.25 = 4 times per epoch)")
 
     args = parser.parse_args()
     main(vars(args))
