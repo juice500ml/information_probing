@@ -1,7 +1,7 @@
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 import torch
 from pytorch_lightning import LightningModule
-from transformers import Wav2Vec2Model, AdamW
+from transformers import Wav2Vec2Model
 
 
 class Wav2Vec2WithProbe(LightningModule):
@@ -20,9 +20,9 @@ class Wav2Vec2WithProbe(LightningModule):
         self.save_hyperparameters()
 
         self.model = Wav2Vec2Model.from_pretrained(model_name, apply_spec_augment=False)
-        self._prepare_model()
-
         self.fc = self._build_probe()
+
+        self._prepare_model()
 
         self._validation_outputs = []
         self._test_outputs = []
@@ -55,6 +55,7 @@ class Wav2Vec2WithProbe(LightningModule):
 
     def _prepare_model(self):
         self._grad(self.model, False)
+        self._grad(self.fc, True)
         if self.hparams.tuning_type == "linear":
             self.model.encoder.layers = self.model.encoder.layers[:self.hparams.layer_index]
         elif self.hparams.tuning_type == "finetune":
@@ -112,7 +113,7 @@ class Wav2Vec2WithProbe(LightningModule):
         self._log("test", loss, logits, labels)
 
     def configure_optimizers(self):
-        return AdamW(
+        return torch.optim.AdamW(
             self.parameters(),
             lr=self.hparams.lr,
             weight_decay=self.hparams.weight_decay,

@@ -72,7 +72,7 @@ def _parse(commonphone_path, max_length=10):
 
 def _filter_words(df):
     df["lang_text"] = df.apply(lambda x: f"{x.language}_{x.text}", axis=1)
-    long_enough_mask = (df["max"] - df["min"]) >= 0.025
+    long_enough_mask = ((df["max"] - df["min"]) >= 0.025) & ((df["max"] - df["min"]) < 2)
     count_words = df[(df.text != "") & long_enough_mask].lang_text.value_counts()
     target_words = set(count_words[count_words >= 1000].keys())
     new_df = df[df.lang_text.isin(target_words) & long_enough_mask].copy().reset_index(drop=True)
@@ -84,7 +84,7 @@ def _filter_words(df):
 
 
 def _filter_phonemes(df):
-    long_enough_mask = (df["max"] - df["min"]) >= 0.025
+    long_enough_mask = ((df["max"] - df["min"]) >= 0.025) & ((df["max"] - df["min"]) < 2)
     count_words = df[(df.text != "(...)") & long_enough_mask].text.value_counts()
     target_words = set(count_words[count_words >= 1000].keys())
     new_df = df[df.text.isin(target_words) & long_enough_mask].copy().reset_index(drop=True)

@@ -36,12 +36,12 @@ if __name__ == "__main__":
 
     # DataModule
     parser.add_argument("--dataset_path", type=Path, help="Path to dataset csv file")
-    parser.add_argument("--model_name", default="facebook/wav2vec2-base", help="Huggingface transformers model name")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
+    parser.add_argument("--model_name", default="facebook/wav2vec2-xls-r-300m", help="Huggingface transformers model name")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
     parser.add_argument("--num_workers", type=int, default=5, help="Number of multiprocessing workers for dataloading")
 
     # Model
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate for AdamW")
+    parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate for AdamW")
     parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay for AdamW")
     parser.add_argument("--tuning_type", choices=["linear", "finetune"], help="Type of training (linear: linear probing, finetune: fine-tuning)")
     parser.add_argument("--layer_index", type=int, help="Transformer layer index to use")
@@ -53,8 +53,9 @@ if __name__ == "__main__":
     parser.add_argument("--accelerator",  default="gpu", help="gpu or cpu")
     parser.add_argument("--devices", default=1, help="# of gpus")
     parser.add_argument("--fast_dev_run", help="True if debug mode", default=False)
-    parser.add_argument("--max_epochs", type=int, default=10, help="Maximum epochs to train")
+    parser.add_argument("--max_epochs", type=int, default=30, help="Maximum epochs to train")
     parser.add_argument("--val_check_interval", type=float, default=1.0, help="Validation interval (1.0 = Once per epoch, 0.25 = 4 times per epoch)")
 
     args = parser.parse_args()
+    print(args)
     main(vars(args))
