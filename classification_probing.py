@@ -4,7 +4,7 @@ from os import getcwd
 from pathlib import Path
 
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 from model import Wav2Vec2WithProbe
 from dataset import CommonPhoneDataModule
@@ -16,6 +16,8 @@ def main(args):
 
     seed_everything(seed=42, workers=True)
     checkpoint_callback = ModelCheckpoint(monitor="val/loss")
+    early_stop_callback = EarlyStopping(
+        monitor="val/loss", min_delta=0.00, patience=3, verbose=False, mode="min")
 
     trainer = Trainer(
         accelerator=args["accelerator"],
@@ -23,7 +25,7 @@ def main(args):
         fast_dev_run=args["fast_dev_run"],
         max_epochs=args["max_epochs"],
         val_check_interval=args["val_check_interval"],
-        callbacks=[checkpoint_callback],
+        callbacks=[checkpoint_callback, early_stop_callback],
         deterministic=True,
         default_root_dir=f"{getcwd()}/exps/{args['exp_name']}_{datetime.today().isoformat()}"
     )
@@ -53,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("--accelerator",  default="gpu", help="gpu or cpu")
     parser.add_argument("--devices", default=1, help="# of gpus")
     parser.add_argument("--fast_dev_run", help="True if debug mode", default=False)
-    parser.add_argument("--max_epochs", type=int, default=30, help="Maximum epochs to train")
+    parser.add_argument("--max_epochs", type=int, default=50, help="Maximum epochs to train")
     parser.add_argument("--val_check_interval", type=float, default=1.0, help="Validation interval (1.0 = Once per epoch, 0.25 = 4 times per epoch)")
 
     args = parser.parse_args()
