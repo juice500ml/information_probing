@@ -20,6 +20,7 @@ def _get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_path", type=Path, help="Path to dataset.")
     parser.add_argument("--output_path", type=Path, help="Output csv folder")
+    parser.add_argument("--min_classwise_count", type=int, help="Minimum # of samples for each class to have")
     return parser.parse_args()
 
 
@@ -70,11 +71,11 @@ def _parse(commonphone_path, max_length=10):
     return pd.DataFrame(phonemes), pd.DataFrame(words)
 
 
-def _filter_words(df):
+def _filter_words(df, min_classwise_count):
     df["lang_text"] = df.apply(lambda x: f"{x.language}_{x.text}", axis=1)
     long_enough_mask = ((df["max"] - df["min"]) >= 0.025) & ((df["max"] - df["min"]) < 2)
     count_words = df[(df.text != "") & long_enough_mask].lang_text.value_counts()
-    target_words = set(count_words[count_words >= 100].keys())
+    target_words = set(count_words[count_words >= min_classwise_count].keys())
     new_df = df[df.lang_text.isin(target_words) & long_enough_mask].copy().reset_index(drop=True)
     new_df = new_df.rename(columns={"text": "original_text"}).rename(columns={"lang_text": "text"})
 
@@ -83,10 +84,10 @@ def _filter_words(df):
     return new_df
 
 
-def _filter_phonemes(df):
+def _filter_phonemes(df, min_classwise_count):
     long_enough_mask = ((df["max"] - df["min"]) >= 0.025) & ((df["max"] - df["min"]) < 2)
     count_words = df[(df.text != "(...)") & long_enough_mask].text.value_counts()
-    target_words = set(count_words[count_words >= 100].keys())
+    target_words = set(count_words[count_words >= min_classwise_count].keys())
     new_df = df[df.text.isin(target_words) & long_enough_mask].copy().reset_index(drop=True)
 
     print(f"Original phoneme count: {df[df.text != '(...)'].text.nunique()}, # of samples: {len(df[df.text != '(...)'])}")
@@ -97,5 +98,5 @@ def _filter_phonemes(df):
 if __name__ == "__main__":
     args = _get_args()
     df_phonemes, df_words = _parse(args.dataset_path)
-    _filter_phonemes(df_phonemes).to_csv(args.output_path / f"commonphone_phonemes_100.csv.gz", index=False, compression="gzip")
-    _filter_words(df_words).to_csv(args.output_path / f"commonphone_words_100.csv.gz", index=False, compression="gzip")
+    _filter_phonemes(df_phonemes, args.min_classwise_count).to_csv(args.output_path / f"commonphone_phonemes_{args.min_classwise_count}.csv.gz", index=False, compression="gzip")
+    _filter_words(df_words, args.min_classwise_count).to_csv(args.output_path / f"commonphone_words_{args.min_classwise_count}.csv.gz", index=False, compression="gzip")
