@@ -1,4 +1,4 @@
-# Information Probing
+# Understanding Probe Behaviors through Variational Bounds of Mutual Information
 
 ## Environment setup
 ```bash
