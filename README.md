@@ -16,7 +16,13 @@ pip install -r requirements.txt
 wget -O /path/to/save/cp-1-0.tgz --quiet \
     'https://zenodo.org/record/5846137/files/cp-1-0.tgz?download=1'
 tar -xzf /path/to/save/cp-1-0.tgz
-python3 prepare_commonphone.py --dataset_path /untarred/path/CP --output_path /path/to/save/csvs
+
+# We use --min_classwise_count to filter out classes with too little samples.
+# We tested 100, 400, and 1600.
+python3 prepare_commonphone.py \
+    --dataset_path /untarred/path/CP \
+    --output_path /path/to/save/csvs \
+    --min_classwise_count INTEGER
 ```
 
 ## Run experiments
