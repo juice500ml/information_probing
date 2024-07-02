@@ -1,4 +1,6 @@
 # Understanding Probe Behaviors through Variational Bounds of Mutual Information
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=LiFcO_e6l-E" target="_blank"><img src="http://img.youtube.com/vi/LiFcO_e6l-E/0.jpg" alt="presentation" width="360" height="270" border="10" /></a>
+
 - ICASSP 2024 (Oral)
 - [Paper](https://arxiv.org/abs/2312.10019) / [12 minute presentation](https://youtu.be/LiFcO_e6l-E)
 
