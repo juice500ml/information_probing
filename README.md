@@ -1,6 +1,7 @@
 # Understanding Probe Behaviors through Variational Bounds of Mutual Information
 - Accepted to ICASSP 2024
 - [Arxiv](https://arxiv.org/abs/2312.10019)
+- [12 minute presentation](https://youtu.be/LiFcO_e6l-E)
 
 ## Environment setup
 ```bash
